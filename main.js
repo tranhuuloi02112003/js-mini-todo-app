@@ -1,13 +1,31 @@
-const tasks = [
-
-];
-
+const tasks = [];
 const taskList = document.querySelector("#task-list");
-
 const todoForm = document.querySelector("#todo-form");
 const todoInput = document.querySelector("#todo-input");
 
-todoForm.onsubmit = (e) => {
+function handleTaskActions(e) {
+  const taskItem = e.target.closest(".task-item");
+  const taskIndex = +taskItem.getAttribute("task-index");
+  console.log(taskIndex);
+  const task = tasks[taskIndex];
+
+  if (e.target.closest(".edit")) {
+    console.log("Edit task");
+    const newTitle = prompt("Enter the new task title:", task.title);
+    task.title = newTitle;
+    renderTasks();
+  } else if (e.target.closest(".done")) {
+    task.completed = !task.completed;
+    renderTasks();
+  } else if (e.target.closest(".delete")) {
+    if (confirm(`Are you sure you want to delete '${task.title}'?`)) {
+      tasks.splice(taskIndex, 1);
+      renderTasks();
+    }
+  }
+}
+
+function addTask(e) {
   e.preventDefault();
 
   const newTask = {
@@ -22,14 +40,16 @@ todoForm.onsubmit = (e) => {
 
   tasks.push(newTask);
   todoInput.value = "";
-  render();
-};
+  renderTasks();
+}
 
-function render() {
+function renderTasks() {
   const html = tasks
     .map(
-      (task) => `
-    <li class="task-item  ${task.completed ? "completed" : ""}">
+      (task, index) => `
+    <li class="task-item  ${
+      task.completed ? "completed" : ""
+    }" task-index="${index}">
         <span class="task-title">${task.title}</span>
         <div class="task-action">
             <button class="task-btn edit">Edit</button>
@@ -44,5 +64,8 @@ function render() {
     .join("");
   taskList.innerHTML = html;
 }
-render();
-// console.log(html);
+
+todoForm.addEventListener("submit", addTask);
+taskList.addEventListener("click", handleTaskActions);
+
+renderTasks();
