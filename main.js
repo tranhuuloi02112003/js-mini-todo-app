@@ -1,26 +1,61 @@
-const tasks = [];
+const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 const taskList = document.querySelector("#task-list");
 const todoForm = document.querySelector("#todo-form");
 const todoInput = document.querySelector("#todo-input");
 
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function isDuplicate(newTitle, excludeIndex = -1) {
+  const isDuplicate = tasks.some(
+    (task, index) =>
+      task.title.toLowerCase() === newTitle.toLowerCase() &&
+      index !== excludeIndex
+  );
+  return isDuplicate;
+}
+
 function handleTaskActions(e) {
   const taskItem = e.target.closest(".task-item");
-  const taskIndex = +taskItem.getAttribute("task-index");
-  console.log(taskIndex);
+  if (taskItem === null) return;
+  const taskIndex = +taskItem.dataset.index;
   const task = tasks[taskIndex];
 
   if (e.target.closest(".edit")) {
-    console.log("Edit task");
-    const newTitle = prompt("Enter the new task title:", task.title);
+    let newTitle = prompt("Enter the new task title:", task.title);
+    if (newTitle === null) return;
+
+    newTitle = newTitle.trim();
+
+    if (!newTitle) {
+      alert("Task title cannot be empty!");
+      return;
+    }
+
+    if (isDuplicate(newTitle, taskIndex)) {
+      alert("Task already exists");
+      return;
+    }
+
     task.title = newTitle;
     renderTasks();
-  } else if (e.target.closest(".done")) {
+    saveTasks();
+    return;
+  }
+
+  if (e.target.closest(".done")) {
     task.completed = !task.completed;
     renderTasks();
-  } else if (e.target.closest(".delete")) {
+    saveTasks();
+    return;
+  }
+
+  if (e.target.closest(".delete")) {
     if (confirm(`Are you sure you want to delete '${task.title}'?`)) {
       tasks.splice(taskIndex, 1);
       renderTasks();
+      saveTasks();
     }
   }
 }
@@ -38,18 +73,29 @@ function addTask(e) {
     return;
   }
 
+  if (isDuplicate(newTask.title)) {
+    alert("Task already exists");
+    return;
+  }
+
   tasks.push(newTask);
   todoInput.value = "";
   renderTasks();
+  saveTasks();
 }
 
 function renderTasks() {
+  if (!tasks.length) {
+    taskList.innerHTML = `<li class="empty-message">No tasks available</li>`;
+    return;
+  }
+
   const html = tasks
     .map(
       (task, index) => `
     <li class="task-item  ${
       task.completed ? "completed" : ""
-    }" task-index="${index}">
+    }" data-index="${index}">
         <span class="task-title">${task.title}</span>
         <div class="task-action">
             <button class="task-btn edit">Edit</button>
